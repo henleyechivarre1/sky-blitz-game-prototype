@@ -1,0 +1,31 @@
+.game-start-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 94vh;
+  width: 800px;
+  background-color: #1a1a2e;
+}
+
+.gameSceneMain {
+    display: flex;
+    justify-content: center;
+    height: 100%;
+    padding: 20px;
+}
+
+.gameSceneDisplay {
+  width: 600px;
+  height: 800px;
+  display: block; // Removes unwanted extra margins
+}
+
+.gameSceneCanvas {
+    background-color: #1a1a2e;
+}
+
+.gameSceneCanvasHW {
+    width: 800px;
+    height: 100%;
+}
