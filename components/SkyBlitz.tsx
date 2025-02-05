@@ -22,6 +22,13 @@ interface Particle {
   life: number
 }
 
+interface PowerUp {
+  x: number;
+  y: number;
+  active: boolean;
+}
+
+
 export const SkyBlitz: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [player, setPlayer] = useState({
@@ -35,10 +42,12 @@ export const SkyBlitz: React.FC = () => {
   const [gameOver, setGameOver] = useState(false);
   const lastShotTime = useRef(0);
   const SHOOT_INTERVAL = 100;
-  const currentTime = performance.now();
   const gameStartTime = useRef(performance.now()); // Track game start time
   const [gameStarted, setGameStarted] = useState(false);
   const [unlockedTypes, setUnlockedTypes] = useState([1]);
+  const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
+  const [bulletCount, setBulletCount] = useState(1);
+  const powerUpTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!gameStarted) return; // Only attach input when the game starts
@@ -113,22 +122,70 @@ export const SkyBlitz: React.FC = () => {
   // }, [gameOver]);
 
   const spawnEnemy = (enemyType: number) => {
-    if (!gameStarted) return; // WIll spawn after game started
+  let baseHealth = 1;
+  if (!gameStarted) return; 
 
-    const newEnemy: Enemy = {
-      x: Math.random() * CANVAS_WIDTH,
-      y: 0,
-      type: enemyType,
-      health: enemyType === 2 || enemyType === 4 ? 3 : 1,
-      speed: enemyType === 3 ? 2 : enemyType === 1 ? 1 : 0.5,
-    };
+  // Increase enemy health based on score milestones
+  if (score >= 100) {
+    baseHealth = enemyType === 1 ? 1 : enemyType === 2 ? 3 : enemyType === 3 ? 2 : 4;
+  } else if (score >= 200) {
+    baseHealth = enemyType === 1 ? 2 : enemyType === 2 ? 3 : enemyType === 3 ? 4 : 6;
+  } else if (score >= 300) {
+    baseHealth = enemyType === 1 ? 3 : enemyType === 2 ? 5 : enemyType === 3 ? 6 : 7;
+  } else {
+    baseHealth = enemyType === 1 ? 1: enemyType === 2 ? 2 : enemyType === 3 ? 2 : 3; // Default health
+  }
 
-    setEnemies((prev) => [...prev, newEnemy]);
+  const newEnemy: Enemy = {
+    x: Math.random() * CANVAS_WIDTH,
+    y: 0,
+    type: enemyType,
+    health: baseHealth,
+    speed: enemyType === 3 ? 2 : enemyType === 1 ? 1 : 0.5,
   };
 
+  setEnemies((prev) => [...prev, newEnemy]);
+};
+
+const spawnPowerUp = (x: number, y: number) => {
+  setPowerUps((prev) => [...prev, { x, y, active: true }]);
+};
+
+const checkPowerUpCollection = () => {
+  setPowerUps((prev) =>
+    prev.filter((powerUp) => {
+      const collected =
+        Math.abs(powerUp.x - player.x) < 20 &&
+        Math.abs(powerUp.y - player.y) < 20;
+
+      if (collected) {
+        activatePowerUp();
+      }
+
+      return !collected; // Remove power-up if collected
+    })
+  );
+};
+
+const activatePowerUp = () => {
+  setBulletCount(6); // Increase bullets
+  if (powerUpTimer.current) clearTimeout(powerUpTimer.current); // Reset timer if another power-up is collected
+
+  powerUpTimer.current = setTimeout(() => {
+    setBulletCount(1); // Revert to 1 bullet after 1 minute
+  }, 6000);
+};
+
   const shootLaser = () => {
-    const newLaser: Laser = { x: player.x, y: player.y - 20 };
-    setLasers((prev) => [...prev, newLaser]);
+    const newLasers: { x: number; y: number }[] = [];
+    for (let i = 0; i < bulletCount; i++) {
+      newLasers.push({
+        x: player.x - i * 10 + bulletCount * 5,
+        y: player.y - 20,
+      });
+    }
+
+    setLasers((prev) => [...prev, ...newLasers]);
   };
 
   const createExplosion = (x: number, y: number) => {
@@ -154,6 +211,8 @@ export const SkyBlitz: React.FC = () => {
     setParticles([]);
     setScore(0);
     setGameOver(false);
+    setUnlockedTypes([1]);
+    gameStartTime.current = performance.now();
   };
 
   useGameLoop(() => {
@@ -162,19 +221,12 @@ export const SkyBlitz: React.FC = () => {
     const currentTime = performance.now();
     const elapsedTime = currentTime - gameStartTime.current; // Time since game started
 
-    // === Unlock new enemy types at set intervals ===
-    if (elapsedTime >= 60000 && !unlockedTypes.includes(2)) {
-      // Unlock Type 2 after 1 min
-      setUnlockedTypes((prev) => [...prev, 2]);
-    }
-    if (elapsedTime >= 120000 && !unlockedTypes.includes(3)) {
-      // Unlock Type 3 after 2 min
-      setUnlockedTypes((prev) => [...prev, 3]);
-    }
-    if (elapsedTime >= 180000 && !unlockedTypes.includes(4)) {
-      // Unlock Type 4 after 3 min
-      setUnlockedTypes((prev) => [...prev, 4]);
-    }
+    if (score >= 100 && !unlockedTypes.includes(2))
+      setUnlockedTypes((prev) => [...prev, 2]); // Unlock Type 2
+    if (score >= 200 && !unlockedTypes.includes(3))
+      setUnlockedTypes((prev) => [...prev, 3]); // Unlock Type 3
+    if (score >= 300 && !unlockedTypes.includes(4))
+      setUnlockedTypes((prev) => [...prev, 4]); // Unlock Type 4
 
     // === Spawn Enemy Based on Unlocked Types ===
     if (Math.random() < 0.02) {
@@ -186,6 +238,18 @@ export const SkyBlitz: React.FC = () => {
       shootLaser();
       lastShotTime.current = currentTime;
     }
+
+    checkPowerUpCollection(); // Check if the player collects a power-up
+
+    setPowerUps(
+      (prev) =>
+        prev
+          .map((powerUp) => ({
+            ...powerUp,
+            y: powerUp.y + 0.8, // Power-up falls down at speed 2
+          }))
+          .filter((powerUp) => powerUp.y < CANVAS_HEIGHT) // Remove when off-screen
+    );
 
     setEnemies((prev) =>
       prev
@@ -253,6 +317,20 @@ export const SkyBlitz: React.FC = () => {
                   )
               )
             );
+            // Power-Up Chance (Only for Type 4 Enemies)
+            if (enemy.type === 1 && Math.random() < 0.01) {
+              spawnPowerUp(enemy.x, enemy.y); // Spawn power-up where enemy dies
+            }
+            if (enemy.type === 2 && Math.random() < 0.02) {
+              spawnPowerUp(enemy.x, enemy.y); // Spawn power-up where enemy dies
+            }
+            if (enemy.type === 3 && Math.random() < 0.03) {
+              spawnPowerUp(enemy.x, enemy.y); // Spawn power-up where enemy dies
+            }
+            if (enemy.type === 4 && Math.random() < 0.04) {
+              spawnPowerUp(enemy.x, enemy.y); // Spawn power-up where enemy dies
+            }
+
             createExplosion(enemy.x, enemy.y);
             return { ...enemy, health: enemy.health - 1 };
           }
@@ -324,6 +402,17 @@ export const SkyBlitz: React.FC = () => {
       ctx.fillStyle = "white";
       ctx.font = "20px Arial";
       ctx.fillText(`Points: ${score}`, 10, 30);
+
+      powerUps.forEach((powerUp) => {
+        ctx.fillStyle = "yellow";
+        ctx.beginPath();
+        ctx.arc(powerUp.x, powerUp.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "black";
+        ctx.font = "12px Arial";
+        ctx.fillText("P", powerUp.x - 4, powerUp.y + 4);
+      });
 
       if (gameOver) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
