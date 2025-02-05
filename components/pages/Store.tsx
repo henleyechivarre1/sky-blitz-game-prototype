@@ -4,21 +4,45 @@ import "../scss/Store.scss";
 interface StoreProps {
   onClose: () => void; // Function to close the store
   onUpgradeBullets: () => void;
+  onUpgradeShield: () => void; // Function to upgrade shield
+  shieldHealth: number; // Current shield health
+  setShieldHealth: React.Dispatch<React.SetStateAction<number>>;
   score: number;
   setScore: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export default function Store({ onClose, onUpgradeBullets, score , setScore}: StoreProps) {
+export default function Store({
+  onClose,
+  onUpgradeBullets,
+  onUpgradeShield,
+  score,
+  setScore,
+  shieldHealth,
+  setShieldHealth,
+}: StoreProps) {
   const [bulletsPurchased, setBulletsPurchased] = useState(false);
-const bulletCost = 100; // Price for bullet upgrade
 
-const canBuy = score >= bulletCost;
+  const bulletCost = 100; // Price for bullet upgrade
+  const [shieldPurchased, setShieldPurchased] = useState(false);
+  const shieldCost = 100; // Shield upgrade cost
+  const canBuyShield = score >= shieldCost; // Can the player afford the shield?
 
-  const handlePurchase = () => {
+  const canBuy = score >= bulletCost;
+
+  const handlePurchaseBullets = () => {
     if (canBuy && !bulletsPurchased) {
       onUpgradeBullets();
       setBulletsPurchased(true); // Mark as purchased
       setScore((prev) => prev - bulletCost); // Deduct points
+    }
+  };
+
+  const handlePurchaseShield = () => {
+    if (canBuy && !shieldPurchased) {
+      onUpgradeShield(); // Upgrade shield
+      setShieldPurchased(true); // Mark shield as purchased
+      setScore((prev) => prev - shieldCost); // Deduct points for shield
+      setShieldHealth(3); // Set shield health to 3 (full shield)
     }
   };
 
@@ -39,7 +63,7 @@ const canBuy = score >= bulletCost;
             <button
               className={`buy-button ${!canBuy ? "disabled" : ""}`}
               disabled={!canBuy || bulletsPurchased}
-              onClick={handlePurchase}
+              onClick={handlePurchaseBullets}
             >
               {bulletsPurchased ? "Purchased" : `${bulletCost}`}
             </button>
@@ -48,8 +72,19 @@ const canBuy = score >= bulletCost;
           {/* Upgrade: Shield */}
           <div className="store-item">
             <h3>Shield</h3>
-            <p>Protect yourself with a temporary shield.(Requires 3 hits).</p>
-            <button className="buy-button">Buy</button>
+            <p>
+              Protect yourself with a temporary shield. It absorbs 3 hits before
+              being destroyed.
+            </p>
+            <button
+              className={`buy-button ${
+                !canBuyShield || shieldPurchased ? "disabled" : ""
+              }`}
+              onClick={handlePurchaseShield}
+              disabled={!canBuyShield || shieldPurchased}
+            >
+              {shieldPurchased ? "Purchased" : `${shieldCost}`}
+            </button>
           </div>
         </div>
 

@@ -44,9 +44,10 @@ export const SkyBlitz: React.FC = () => {
   const [unlockedTypes, setUnlockedTypes] = useState([1]);
   const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [bulletCount, setBulletCount] = useState(1);
+  const [shieldHealth, setShieldHealth] = useState(0);
   const [upgradeBulletCount, setUpgradeBulletCount] = useState(1);
   const [score, setScore] = useState(0);
-  const [points, setPoints] = useState(0);
+  const [points, setPoints] = useState(900000);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false); // Pause state
@@ -192,6 +193,24 @@ export const SkyBlitz: React.FC = () => {
   const upgradeBullets = () => {
     setUpgradeBulletCount((prev) => prev + 2);
     setBulletCount((prev) => prev + 2);
+  };
+  const onUpgradeShield = () => {
+    setShieldHealth(3); // Set shield health to full (3 hits)
+  };
+
+  const checkPlayerHit = (enemyIndex: number) => {
+    if (shieldHealth > 0) {
+      setShieldHealth((prev) => prev - 1); // Reduce shield health by 1
+
+      if (shieldHealth - 1 <= 0) {
+        setShieldHealth(0); // Shield disappears when hit 3 times
+      }
+    } else {
+      // If shield is already gone, destroy the enemy
+      setEnemies((prevEnemies) =>
+        prevEnemies.filter((_, i) => i !== enemyIndex)
+      );
+    }
   };
 
   const checkPowerUpCollection = () => {
@@ -381,7 +400,6 @@ export const SkyBlitz: React.FC = () => {
             createExplosion(enemy.x, enemy.y);
             return { ...enemy, health: enemy.health - 1 };
           }
-
           return enemy;
         })
         .filter((enemy) => {
@@ -433,7 +451,11 @@ export const SkyBlitz: React.FC = () => {
     if (ctx) {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
       // drawBackground(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)
-      Player.draw(ctx, player);
+      Player.draw(ctx, {
+        x: player.x,
+        y: player.y,
+        shieldHealth: shieldHealth || 0,
+      });
       enemies.forEach((enemy) => Enemy.draw(ctx, enemy));
       lasers.forEach((laser) => Laser.draw(ctx, laser));
 
@@ -490,8 +512,11 @@ export const SkyBlitz: React.FC = () => {
                 setGameStarted(true); // Start the game
               }}
               onUpgradeBullets={upgradeBullets}
+              onUpgradeShield={onUpgradeShield}
               score={points}
               setScore={setPoints}
+              shieldHealth={shieldHealth} // Pass current shield health
+              setShieldHealth={setShieldHealth}
             />
           </div>
         ) : (
@@ -535,7 +560,8 @@ export const SkyBlitz: React.FC = () => {
                 <button
                   onClick={() => {
                     backButton();
-                  }}>
+                  }}
+                >
                   Quit
                 </button>
               </div>

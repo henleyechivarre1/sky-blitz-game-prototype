@@ -5,8 +5,11 @@ import Store from "./Store";
 interface GameStartProps {
   onStart: () => void;
   onUpgradeBullets: () => void;
+  onUpgradeShield: () => void;
   score: number;
   setScore: React.Dispatch<React.SetStateAction<number>>;
+  shieldHealth: number;
+  setShieldHealth: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export default function GameStart({
@@ -14,6 +17,9 @@ export default function GameStart({
   onUpgradeBullets,
   score,
   setScore,
+  onUpgradeShield,
+  shieldHealth,
+  setShieldHealth,
 }: GameStartProps) {
   const [isStoreOpen, setIsStoreOpen] = useState(false);
 
@@ -32,8 +38,11 @@ export default function GameStart({
         <Store
           onClose={() => setIsStoreOpen(false)}
           onUpgradeBullets={onUpgradeBullets}
+          onUpgradeShield={onUpgradeShield} // Pass shield upgrade function
           score={score}
           setScore={setScore}
+          shieldHealth={shieldHealth} // Pass current shield health
+          setShieldHealth={setShieldHealth} // Pass function to update shield health
         />
       )}
     </div>

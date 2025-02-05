@@ -1,10 +1,11 @@
 export interface PlayerProps {
-  x: number
-  y: number
+  x: number;
+  y: number;
+  shieldHealth?: number;
 }
 
 export class Player {
-  static draw(ctx: CanvasRenderingContext2D, { x, y }: PlayerProps) {
+  static draw(ctx: CanvasRenderingContext2D, { x, y, shieldHealth = 0 }: PlayerProps) {
     // Main body
     ctx.fillStyle = "#4a4a4a"
     ctx.beginPath()
@@ -44,6 +45,15 @@ export class Player {
     ctx.beginPath()
     ctx.arc(x, y + 15, 10, 0, Math.PI * 2)
     ctx.fill()
+
+    if (shieldHealth > 0) {
+      ctx.strokeStyle = `rgba(0, 200, 255, 0.5)`; // Light blue glow effect
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(x, y, 25, 0, Math.PI * 2); // Circular shield
+      ctx.stroke();
+    }
+
   }
 }
 
