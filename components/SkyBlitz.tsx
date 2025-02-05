@@ -6,7 +6,6 @@ import { Player } from "./Player"
 import { Enemy } from "./Enemy"
 import { Laser } from "./Laser"
 import { useGameLoop } from "../hooks/useGameLoop"
-import { drawBackground } from "../utils/drawBackground"
 import { Button } from "@/components/ui/button"
 import GameStart from "./pages/GameStart"
 import "./scss/GameScene.scss";
@@ -35,19 +34,22 @@ export const SkyBlitz: React.FC = () => {
     x: CANVAS_WIDTH / 2,
     y: CANVAS_HEIGHT - 50,
   });
+  const SHOOT_INTERVAL = 100;
+  const lastShotTime = useRef(0);
+  const gameStartTime = useRef(performance.now()); // Track game start time
   const [enemies, setEnemies] = useState<Enemy[]>([]);
   const [lasers, setLasers] = useState<Laser[]>([]);
+  const powerUpTimer = useRef<NodeJS.Timeout | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [score, setScore] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
-  const lastShotTime = useRef(0);
-  const SHOOT_INTERVAL = 100;
-  const gameStartTime = useRef(performance.now()); // Track game start time
-  const [gameStarted, setGameStarted] = useState(false);
   const [unlockedTypes, setUnlockedTypes] = useState([1]);
   const [powerUps, setPowerUps] = useState<PowerUp[]>([]);
   const [bulletCount, setBulletCount] = useState(1);
-  const powerUpTimer = useRef<NodeJS.Timeout | null>(null);
+  const [upgradeBulletCount, setUpgradeBulletCount] = useState(1);
+  const [score, setScore] = useState(0);
+  const [points, setPoints] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false); // Pause state
 
   useEffect(() => {
     if (!gameStarted) return; // Only attach input when the game starts
@@ -70,6 +72,22 @@ export const SkyBlitz: React.FC = () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
     };
   }, [gameStarted, gameOver]); // Reinitialize inputs when game starts
+
+  //Pause functionality
+  useEffect(() => {
+    // Add event listener for ESC key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsPaused((prev) => !prev); // Toggle pause on ESC
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown); // Clean up listener on component unmount
+    };
+  }, []);
 
   // useEffect(() => {
   //   const interval = setInterval(() => {
@@ -122,59 +140,87 @@ export const SkyBlitz: React.FC = () => {
   // }, [gameOver]);
 
   const spawnEnemy = (enemyType: number) => {
-  let baseHealth = 1;
-  if (!gameStarted) return; 
+    let baseHealth = 1;
+    if (!gameStarted) return;
 
-  // Increase enemy health based on score milestones
-  if (score >= 100) {
-    baseHealth = enemyType === 1 ? 1 : enemyType === 2 ? 3 : enemyType === 3 ? 2 : 4;
-  } else if (score >= 200) {
-    baseHealth = enemyType === 1 ? 2 : enemyType === 2 ? 3 : enemyType === 3 ? 4 : 6;
-  } else if (score >= 300) {
-    baseHealth = enemyType === 1 ? 3 : enemyType === 2 ? 5 : enemyType === 3 ? 6 : 7;
-  } else {
-    baseHealth = enemyType === 1 ? 1: enemyType === 2 ? 2 : enemyType === 3 ? 2 : 3; // Default health
-  }
+    // Increase enemy health based on score milestones
+    if (score >= 100) {
+      baseHealth =
+        enemyType === 1 ? 1 : enemyType === 2 ? 3 : enemyType === 3 ? 2 : 4;
+    } else if (score >= 300) {
+      baseHealth =
+        enemyType === 1 ? 2 : enemyType === 2 ? 3 : enemyType === 3 ? 4 : 6;
+    } else if (score >= 500) {
+      baseHealth =
+        enemyType === 1 ? 3 : enemyType === 2 ? 5 : enemyType === 3 ? 6 : 7;
+    } else {
+      baseHealth =
+        enemyType === 1 ? 1 : enemyType === 2 ? 2 : enemyType === 3 ? 2 : 3; // Default health
+    }
 
-  const newEnemy: Enemy = {
-    x: Math.random() * CANVAS_WIDTH,
-    y: 0,
-    type: enemyType,
-    health: baseHealth,
-    speed: enemyType === 3 ? 2 : enemyType === 1 ? 1 : 0.5,
+    const newEnemy: Enemy = {
+      x: Math.random() * CANVAS_WIDTH,
+      y: 0,
+      type: enemyType,
+      health: baseHealth,
+      speed: enemyType === 3 ? 2 : enemyType === 1 ? 1 : 0.5,
+    };
+
+    setEnemies((prev) => [...prev, newEnemy]);
   };
 
-  setEnemies((prev) => [...prev, newEnemy]);
-};
+  const backButton = () => {
+    setPlayer({ x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT - 50 });
+    setEnemies([]);
+    setLasers([]);
+    setParticles([]);
+    setGameOver(false);
+    setUnlockedTypes([1]);
+    setScore(0);
+    setBulletCount(upgradeBulletCount); // Reset bullets to default
+    setPowerUps([]);
+    setGameOver(false);
+    setGameStarted(false);
+    setIsPaused(false);
+    gameStartTime.current = performance.now();
+  };
 
-const spawnPowerUp = (x: number, y: number) => {
-  setPowerUps((prev) => [...prev, { x, y, active: true }]);
-};
+  const spawnPowerUp = (x: number, y: number) => {
+    setPowerUps((prev) => [...prev, { x, y, active: true }]);
+  };
 
-const checkPowerUpCollection = () => {
-  setPowerUps((prev) =>
-    prev.filter((powerUp) => {
-      const collected =
-        Math.abs(powerUp.x - player.x) < 20 &&
-        Math.abs(powerUp.y - player.y) < 20;
+  const upgradeBullets = () => {
+    setUpgradeBulletCount((prev) => prev + 2);
+    setBulletCount((prev) => prev + 2);
+  };
 
-      if (collected) {
-        activatePowerUp();
-      }
+  const checkPowerUpCollection = () => {
+    setPowerUps((prev) =>
+      prev.filter((powerUp) => {
+        const collected =
+          Math.abs(powerUp.x - player.x) < 20 &&
+          Math.abs(powerUp.y - player.y) < 20;
 
-      return !collected; // Remove power-up if collected
-    })
-  );
-};
+        if (collected) {
+          activatePowerUp();
+        }
 
-const activatePowerUp = () => {
-  setBulletCount(6); // Increase bullets
-  if (powerUpTimer.current) clearTimeout(powerUpTimer.current); // Reset timer if another power-up is collected
+        return !collected; // Remove power-up if collected
+      })
+    );
+  };
 
-  powerUpTimer.current = setTimeout(() => {
-    setBulletCount(1); // Revert to 1 bullet after 1 minute
-  }, 6000);
-};
+  const activatePowerUp = () => {
+    setBulletCount(6); // Increase bullets
+    // If a timer already exists, clear it first (reset instead of adding)
+    if (powerUpTimer.current) {
+      clearTimeout(powerUpTimer.current);
+    }
+    // Start a new timer (resets duration)
+    powerUpTimer.current = setTimeout(() => {
+      setBulletCount(upgradeBulletCount); // Revert to 1 bullet after 10 seconds
+    }, 10000);
+  };
 
   const shootLaser = () => {
     const newLasers: { x: number; y: number }[] = [];
@@ -184,7 +230,6 @@ const activatePowerUp = () => {
         y: player.y - 20,
       });
     }
-
     setLasers((prev) => [...prev, ...newLasers]);
   };
 
@@ -209,14 +254,16 @@ const activatePowerUp = () => {
     setEnemies([]);
     setLasers([]);
     setParticles([]);
-    setScore(0);
     setGameOver(false);
     setUnlockedTypes([1]);
+    setScore(0);
+    setBulletCount(upgradeBulletCount); // Reset bullets to default
+    setPowerUps([]);
     gameStartTime.current = performance.now();
   };
 
   useGameLoop(() => {
-    if (gameOver) return;
+    if (gameOver || isPaused) return;
 
     const currentTime = performance.now();
     const elapsedTime = currentTime - gameStartTime.current; // Time since game started
@@ -361,6 +408,7 @@ const activatePowerUp = () => {
         }, 0);
 
         setScore((prev) => prev + totalScoreIncrease); // Update score only once
+        setPoints((prev) => prev + totalScoreIncrease);
       }
       return updatedEnemies;
     });
@@ -435,7 +483,17 @@ const activatePowerUp = () => {
     <div className="gameSceneContainer">
       <div className="gameSceneMain">
         {!gameStarted ? (
-          <GameStart onStart={() => setGameStarted(true)} />
+          <div>
+            <GameStart
+              onStart={() => {
+                setGameOver(false); // Reset gameOver before starting
+                setGameStarted(true); // Start the game
+              }}
+              onUpgradeBullets={upgradeBullets}
+              score={points}
+              setScore={setPoints}
+            />
+          </div>
         ) : (
           <div className="gameSceneCanvas">
             <div className="gameSceneCanvasHW">
@@ -448,13 +506,38 @@ const activatePowerUp = () => {
             </div>
 
             {gameOver && (
-              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+              <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center bg-black/80">
+                <h2 className="text-white text-3xl font-bold mb-4">
+                  Game Over
+                </h2>
+
                 <Button
                   onClick={resetGame}
-                  className="px-6 py-3 text-lg bg-blue-500 hover:bg-blue-600 text-white font-bold rounded"
+                  className="px-6 py-3 text-lg bg-blue-500 hover:bg-blue-600 text-white font-bold rounded mb-2"
                 >
                   Restart Game
                 </Button>
+
+                <Button
+                  onClick={() => {
+                    backButton();
+                  }}
+                  className="px-6 py-3 text-lg bg-gray-500 hover:bg-gray-600 text-white font-bold rounded"
+                >
+                  Back to Home
+                </Button>
+              </div>
+            )}
+            {isPaused && (
+              <div className="pause-menu">
+                <h2>Game Paused</h2>
+                <button onClick={() => setIsPaused(false)}>Resume</button>
+                <button
+                  onClick={() => {
+                    backButton();
+                  }}>
+                  Quit
+                </button>
               </div>
             )}
           </div>
