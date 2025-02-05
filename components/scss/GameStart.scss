@@ -30,3 +30,18 @@
 .start-button:hover {
   background-color: #0056b3;
 }
+
+
+button.store-button {
+  padding: 10px 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+  width: 166px;
+  margin-top: 14px;
+}
