@@ -4,15 +4,13 @@
   align-items: center;
   justify-content: center;
   min-height: 94vh;
-  width: 800px;
+  width: 600px;
   background-color: #1a1a2e;
 }
 
 .gameSceneMain {
     display: flex;
     justify-content: center;
-    height: 100%;
-    padding: 20px;
 }
 
 .gameSceneDisplay {
@@ -22,7 +20,7 @@
 }
 
 .gameSceneCanvas {
-    background-color: #1a1a2e;
+    // background-color: #1a1a2e;
 }
 
 .gameSceneCanvasHW {
@@ -59,4 +57,20 @@
   margin: 10px 0;
   padding: 10px;
   font-size: 16px;
+}
+
+.canvas-container {
+  display: flex;
+  justify-content: center; // Center it horizontally
+  align-items: center; // Align it properly
+  height: 100vh; // Take full height of screen
+  width: 100vw; // Full browser width
+}
+
+.game-canvas {
+  width: 600px; // "Phone-like" width
+  height: 100vh; // Full height
+  display: block;
+  cursor: none;
+  background-color: #1a1a2e;
 }

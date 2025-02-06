@@ -10,9 +10,6 @@ import { Button } from "@/components/ui/button"
 import GameStart from "./pages/GameStart"
 import "./scss/GameScene.scss";
 
-const CANVAS_WIDTH = 800
-const CANVAS_HEIGHT = 650
-
 interface Particle {
   x: number
   y: number
@@ -30,9 +27,13 @@ interface PowerUp {
 
 export const SkyBlitz: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvasSize, setCanvasSize] = useState({
+    width: 600, // "Phone-like" width
+    height: window.innerHeight, // Full screen height
+  });
   const [player, setPlayer] = useState({
-    x: CANVAS_WIDTH / 2,
-    y: CANVAS_HEIGHT - 50,
+    x: canvasSize.width / 2,
+    y: canvasSize.height - 50,
   });
   const SHOOT_INTERVAL = 100;
   const PLAYER_HITBOX_SIZE = 15;
@@ -74,6 +75,19 @@ export const SkyBlitz: React.FC = () => {
       canvas.removeEventListener("mousemove", handleMouseMove);
     };
   }, [gameStarted, gameOver]); // Reinitialize inputs when game starts
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const handleResize = () => {
+        setCanvasSize({
+          width: 600, // Keep the width fixed
+          height: window.innerHeight, // Always take full height
+        });
+      };
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
 
   //Pause functionality
   useEffect(() => {
@@ -161,7 +175,7 @@ export const SkyBlitz: React.FC = () => {
     }
 
     const newEnemy: Enemy = {
-      x: Math.random() * CANVAS_WIDTH,
+      x: Math.random() * canvasSize.width,
       y: 0,
       type: enemyType,
       health: baseHealth,
@@ -172,7 +186,7 @@ export const SkyBlitz: React.FC = () => {
   };
 
   const backButton = () => {
-    setPlayer({ x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT - 50 });
+    setPlayer({ x: canvasSize.width / 2, y: canvasSize.height - 50 });
     setEnemies([]);
     setLasers([]);
     setParticles([]);
@@ -270,7 +284,7 @@ export const SkyBlitz: React.FC = () => {
   };
 
   const resetGame = () => {
-    setPlayer({ x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT - 50 });
+    setPlayer({ x: canvasSize.width / 2, y: canvasSize.height - 50 });
     setEnemies([]);
     setLasers([]);
     setParticles([]);
@@ -315,7 +329,7 @@ export const SkyBlitz: React.FC = () => {
             ...powerUp,
             y: powerUp.y + 0.8, // Power-up falls down at speed 2
           }))
-          .filter((powerUp) => powerUp.y < CANVAS_HEIGHT) // Remove when off-screen
+          .filter((powerUp) => powerUp.y < canvasSize.height) // Remove when off-screen
     );
 
     setEnemies((prev) =>
@@ -361,9 +375,9 @@ export const SkyBlitz: React.FC = () => {
         .filter(
           (enemy) =>
             enemy.x >= 0 &&
-            enemy.x <= CANVAS_WIDTH &&
+            enemy.x <= canvasSize.width &&
             enemy.y >= 0 &&
-            enemy.y <= CANVAS_HEIGHT
+            enemy.y <= canvasSize.height
         )
     );
 
@@ -411,16 +425,16 @@ export const SkyBlitz: React.FC = () => {
               )
             );
             // Power-Up Chance (Only for Type 4 Enemies)
-            if (enemy.type === 1 && Math.random() < 0.01) {
+            if (enemy.type === 1 && Math.random() < 0) {
+              // nothing spawns for type 1 enemies
+            }
+            if (enemy.type === 2 && Math.random() < 0.01) {
               spawnPowerUp(enemy.x, enemy.y); // Spawn power-up where enemy dies
             }
-            if (enemy.type === 2 && Math.random() < 0.02) {
+            if (enemy.type === 3 && Math.random() < 0.02) {
               spawnPowerUp(enemy.x, enemy.y); // Spawn power-up where enemy dies
             }
-            if (enemy.type === 3 && Math.random() < 0.03) {
-              spawnPowerUp(enemy.x, enemy.y); // Spawn power-up where enemy dies
-            }
-            if (enemy.type === 4 && Math.random() < 0.04) {
+            if (enemy.type === 4 && Math.random() < 0.05) {
               spawnPowerUp(enemy.x, enemy.y); // Spawn power-up where enemy dies
             }
 
@@ -476,7 +490,7 @@ export const SkyBlitz: React.FC = () => {
     // Render game
     const ctx = canvasRef.current?.getContext("2d");
     if (ctx) {
-      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
       // drawBackground(ctx, CANVAS_WIDTH, CANVAS_HEIGHT)
       Player.draw(ctx, {
         x: player.x,
@@ -513,16 +527,16 @@ export const SkyBlitz: React.FC = () => {
 
       if (gameOver) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
         ctx.fillStyle = "white";
         ctx.font = "48px Arial";
         ctx.textAlign = "center";
-        ctx.fillText("GAME OVER", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 50);
+        ctx.fillText("GAME OVER", canvasSize.width / 2, canvasSize.height / 2 - 50);
         ctx.font = "24px Arial";
         ctx.fillText(
           `Final Score: ${score}`,
-          CANVAS_WIDTH / 2,
-          CANVAS_HEIGHT / 2
+          canvasSize.width / 2,
+          canvasSize.height / 2
         );
       }
     }
@@ -548,12 +562,12 @@ export const SkyBlitz: React.FC = () => {
           </div>
         ) : (
           <div className="gameSceneCanvas">
-            <div className="gameSceneCanvasHW">
+            <div className="canvas-container">
               <canvas
                 ref={canvasRef}
-                width={CANVAS_WIDTH}
-                height={CANVAS_HEIGHT}
-                className="border border-gray-700 cursor-none"
+                width={canvasSize.width}
+                height={canvasSize.height}
+                className="game-canvas"
               />
             </div>
 
