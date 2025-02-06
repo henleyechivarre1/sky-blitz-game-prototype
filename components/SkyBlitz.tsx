@@ -596,9 +596,9 @@ export const SkyBlitz: React.FC = () => {
             )}
             {isPaused && (
               <div className="pause-menu">
-                <h2>Game Paused</h2>
-                <button onClick={() => setIsPaused(false)}>Resume</button>
-                <button
+                <h2 className="game-pause-h2">Game Paused</h2>
+                <button className="game-resume" onClick={() => setIsPaused(false)}>Resume</button>
+                <button className="game-back"
                   onClick={() => {
                     backButton();
                   }}
