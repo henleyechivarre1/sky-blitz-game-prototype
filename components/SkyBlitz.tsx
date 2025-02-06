@@ -48,7 +48,7 @@ export const SkyBlitz: React.FC = () => {
   const [shieldHealth, setShieldHealth] = useState(0);
   const [upgradeBulletCount, setUpgradeBulletCount] = useState(1);
   const [score, setScore] = useState(0);
-  const [points, setPoints] = useState(900000);
+  const [points, setPoints] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false); // Pause state
