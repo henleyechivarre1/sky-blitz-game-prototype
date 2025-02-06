@@ -10,154 +10,168 @@ export class Enemy {
   static draw(ctx: CanvasRenderingContext2D, enemy: Enemy) {
     switch (enemy.type) {
       case 1:
-        this.drawType1(ctx, enemy)
-        break
+        this.drawType1(ctx, enemy);
+        break;
       case 2:
-        this.drawType2(ctx, enemy)
-        break
+        this.drawType2(ctx, enemy);
+        break;
       case 3:
-        this.drawType3(ctx, enemy)
-        break
+        this.drawType3(ctx, enemy);
+        break;
       case 4:
-        this.drawType4(ctx, enemy)
-        break
+        this.drawType4(ctx, enemy);
+        break;
     }
   }
 
   private static drawType1(ctx: CanvasRenderingContext2D, enemy: Enemy) {
-    // Cyclops monster
-    ctx.fillStyle = "#ff4136"
-    ctx.beginPath()
-    ctx.arc(enemy.x, enemy.y, 20, 0, Math.PI * 2)
-    ctx.fill()
+    // Flying Saucer Body (Flat disk)
+    ctx.fillStyle = "#3498db"; // Blue spaceship body
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, 20, 0, Math.PI * 2); // Full circle for the saucer
+    ctx.fill();
 
-    // Eye
-    ctx.fillStyle = "white"
-    ctx.beginPath()
-    ctx.arc(enemy.x, enemy.y - 5, 10, 0, Math.PI * 2)
-    ctx.fill()
+    // Cockpit (Small circle at the bottom of the saucer)
+    ctx.fillStyle = "#7fb2f0"; // Lighter blue for the cockpit
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y + 10, 7, 0, Math.PI * 2); // Cockpit positioned at the bottom center
+    ctx.fill();
 
-    ctx.fillStyle = "black"
-    ctx.beginPath()
-    ctx.arc(enemy.x, enemy.y - 5, 5, 0, Math.PI * 2)
-    ctx.fill()
+    // Engines (Two small circles at the top of the flying saucer)
+    ctx.fillStyle = "#e74c3c"; // Red for the engine glow
+    ctx.beginPath();
+    ctx.arc(enemy.x - 12, enemy.y - 18, 5, 0, Math.PI * 2); // Left engine
+    ctx.arc(enemy.x + 12, enemy.y - 18, 5, 0, Math.PI * 2); // Right engine
+    ctx.fill();
 
-    // Mouth
-    ctx.strokeStyle = "black"
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.arc(enemy.x, enemy.y + 10, 8, 0, Math.PI)
-    ctx.stroke()
+    // Engine Glow (Faded red for the engine glow effect)
+    const gradient = ctx.createRadialGradient(
+      enemy.x,
+      enemy.y - 18,
+      0,
+      enemy.x,
+      enemy.y - 18,
+      10
+    );
+    gradient.addColorStop(0, "rgba(231, 76, 60, 0.8)");
+    gradient.addColorStop(1, "rgba(231, 76, 60, 0.2)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y - 18, 10, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   private static drawType2(ctx: CanvasRenderingContext2D, enemy: Enemy) {
-    // Tentacle monster
-    ctx.fillStyle = "#ff851b"
+    // Triangle-Shaped Spaceship Body (Facing Down)
+    ctx.fillStyle = "#1abc9c"; // Light teal color for the spaceship body
+    ctx.beginPath();
+    ctx.moveTo(enemy.x, enemy.y + 20); // Tip of the spaceship (now at the bottom)
+    ctx.lineTo(enemy.x - 20, enemy.y - 20); // Left top corner
+    ctx.lineTo(enemy.x + 20, enemy.y - 20); // Right top corner
+    ctx.closePath();
+    ctx.fill();
 
-    // Body
-    ctx.beginPath()
-    ctx.ellipse(enemy.x, enemy.y, 15, 20, 0, 0, Math.PI * 2)
-    ctx.fill()
+    // Cockpit (Small circle at the bottom of the spaceship)
+    ctx.fillStyle = "#7fb2f0"; // Lighter blue for the cockpit
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y + 18, 6, 0, Math.PI * 2); // Positioned at the bottom tip of the spaceship
+    ctx.fill();
 
-    // Tentacles
-    for (let i = 0; i < 6; i++) {
-      const angle = (i / 6) * Math.PI * 2
-      const length = 15 + Math.sin(Date.now() / 200 + i) * 5
-      ctx.beginPath()
-      ctx.moveTo(enemy.x, enemy.y)
-      ctx.quadraticCurveTo(
-        enemy.x + Math.cos(angle) * 10,
-        enemy.y + Math.sin(angle) * 10,
-        enemy.x + Math.cos(angle) * length,
-        enemy.y + Math.sin(angle) * length,
-      )
-      ctx.stroke()
-    }
+    // Engines (Two small circles at the top of the spaceship)
+    ctx.fillStyle = "#e74c3c"; // Red for the engine glow
+    ctx.beginPath();
+    ctx.arc(enemy.x - 12, enemy.y - 18, 6, 0, Math.PI * 2); // Left engine
+    ctx.arc(enemy.x + 12, enemy.y - 18, 6, 0, Math.PI * 2); // Right engine
+    ctx.fill();
 
-    // Eyes
-    ctx.fillStyle = "white"
-    ctx.beginPath()
-    ctx.arc(enemy.x - 5, enemy.y - 5, 5, 0, Math.PI * 2)
-    ctx.arc(enemy.x + 5, enemy.y - 5, 5, 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.fillStyle = "black"
-    ctx.beginPath()
-    ctx.arc(enemy.x - 5, enemy.y - 5, 2, 0, Math.PI * 2)
-    ctx.arc(enemy.x + 5, enemy.y - 5, 2, 0, Math.PI * 2)
-    ctx.fill()
+    // Engine Glow (Faded red for the engine glow effect)
+    const gradient = ctx.createRadialGradient(
+      enemy.x,
+      enemy.y - 18,
+      0,
+      enemy.x,
+      enemy.y - 18,
+      10
+    );
+    gradient.addColorStop(0, "rgba(231, 76, 60, 0.8)");
+    gradient.addColorStop(1, "rgba(231, 76, 60, 0.2)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y - 18, 12, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   private static drawType3(ctx: CanvasRenderingContext2D, enemy: Enemy) {
-    // Alien insectoid
-    ctx.fillStyle = "#39cccc"
+    // Stealth or Hidden Spaceship (Darker Color)
+    ctx.fillStyle = "#2c3e50"; // Darker gray/black for a stealthy spaceship
 
-    // Body
-    ctx.beginPath()
-    ctx.moveTo(enemy.x, enemy.y - 20)
-    ctx.lineTo(enemy.x - 15, enemy.y)
-    ctx.lineTo(enemy.x - 10, enemy.y + 15)
-    ctx.lineTo(enemy.x + 10, enemy.y + 15)
-    ctx.lineTo(enemy.x + 15, enemy.y)
-    ctx.closePath()
-    ctx.fill()
+    // Body (Angular, stealthy design facing down)
+    ctx.beginPath();
+    ctx.moveTo(enemy.x, enemy.y + 20); // Bottom point of the spaceship
+    ctx.lineTo(enemy.x - 18, enemy.y); // Left side
+    ctx.lineTo(enemy.x - 12, enemy.y - 12); // Left top
+    ctx.lineTo(enemy.x + 12, enemy.y - 12); // Right top
+    ctx.lineTo(enemy.x + 18, enemy.y); // Right side
+    ctx.closePath();
+    ctx.fill();
 
-    // Eyes
-    ctx.fillStyle = "black"
-    ctx.beginPath()
-    ctx.arc(enemy.x - 8, enemy.y - 10, 4, 0, Math.PI * 2)
-    ctx.arc(enemy.x + 8, enemy.y - 10, 4, 0, Math.PI * 2)
-    ctx.fill()
+    // Eyes (Dark stealthy eyes, positioned at the bottom)
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(enemy.x - 6, enemy.y + 8, 3, 0, Math.PI * 2); // Left eye
+    ctx.arc(enemy.x + 6, enemy.y + 8, 3, 0, Math.PI * 2); // Right eye
+    ctx.fill();
 
-    // Antennae
-    ctx.strokeStyle = "#39cccc"
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.moveTo(enemy.x - 5, enemy.y - 18)
-    ctx.lineTo(enemy.x - 10, enemy.y - 25)
-    ctx.moveTo(enemy.x + 5, enemy.y - 18)
-    ctx.lineTo(enemy.x + 10, enemy.y - 25)
-    ctx.stroke()
+    // Antennae (Subtle antennas)
+    ctx.strokeStyle = "#34495e"; // A little lighter than the body
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(enemy.x - 6, enemy.y + 18); // Antenna left
+    ctx.lineTo(enemy.x - 12, enemy.y + 25);
+    ctx.moveTo(enemy.x + 6, enemy.y + 18); // Antenna right
+    ctx.lineTo(enemy.x + 12, enemy.y + 25);
+    ctx.stroke();
   }
 
   private static drawType4(ctx: CanvasRenderingContext2D, enemy: Enemy) {
-    // Shielded blob monster
-    ctx.fillStyle = "#2ecc40"
+    // Rectangular Tank-like Spaceship (Darker, mean look)
+    ctx.fillStyle = "#2c3e50"; // Dark metallic color for a tougher look
 
-    // Body (pulsating blob)
-    const pulsate = Math.sin(Date.now() / 200) * 2
-    ctx.beginPath()
-    ctx.ellipse(enemy.x, enemy.y, 20 + pulsate, 25 + pulsate, 0, 0, Math.PI * 2)
-    ctx.fill()
+    // Rectangular Body (Tank-like, angular design facing down)
+    ctx.beginPath();
+    ctx.moveTo(enemy.x - 30, enemy.y + 20); // Left side of the rectangle
+    ctx.lineTo(enemy.x + 30, enemy.y + 20); // Right side of the rectangle
+    ctx.lineTo(enemy.x + 30, enemy.y - 20); // Top right corner
+    ctx.lineTo(enemy.x - 30, enemy.y - 20); // Top left corner
+    ctx.closePath();
+    ctx.fill();
 
-    // Eyes
-    ctx.fillStyle = "white"
-    ctx.beginPath()
-    ctx.arc(enemy.x - 8, enemy.y - 5, 6, 0, Math.PI * 2)
-    ctx.arc(enemy.x + 8, enemy.y - 5, 6, 0, Math.PI * 2)
-    ctx.fill()
+    // Cockpit (Small circular cockpit at the bottom center of the rectangle)
+    ctx.fillStyle = "#e74c3c"; // Red for the cockpit
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y + 18, 8, 0, Math.PI * 2); // Positioned near the bottom center
+    ctx.fill();
 
-    ctx.fillStyle = "black"
-    ctx.beginPath()
-    ctx.arc(enemy.x - 8, enemy.y - 5, 3, 0, Math.PI * 2)
-    ctx.arc(enemy.x + 8, enemy.y - 5, 3, 0, Math.PI * 2)
-    ctx.fill()
+    // Eyes (Menacing glowing eyes)
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(enemy.x - 10, enemy.y + 8, 4, 0, Math.PI * 2); // Left eye
+    ctx.arc(enemy.x + 10, enemy.y + 8, 4, 0, Math.PI * 2); // Right eye
+    ctx.fill();
 
-    // Mouth
-    ctx.strokeStyle = "black"
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.arc(enemy.x, enemy.y + 10, 10, 0, Math.PI, false)
-    ctx.stroke()
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(enemy.x - 10, enemy.y + 8, 2, 0, Math.PI * 2); // Left pupil
+    ctx.arc(enemy.x + 10, enemy.y + 8, 2, 0, Math.PI * 2); // Right pupil
+    ctx.fill();
 
-    // Shield effect
-    if (enemy.health > 0) {
-      ctx.strokeStyle = "rgba(0, 255, 255, 0.5)"
-      ctx.lineWidth = 3
-      ctx.beginPath()
-      ctx.arc(enemy.x, enemy.y, 30, 0, Math.PI * 2)
-      ctx.stroke()
-    }
+    // Optional: You can add some lines or patterns for a more industrial look
+    ctx.strokeStyle = "#7f8c8d"; // Lighter metallic details
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(enemy.x - 10, enemy.y - 18); // Details for a mechanical look
+    ctx.lineTo(enemy.x + 10, enemy.y - 18);
+    ctx.stroke();
   }
 }
 
