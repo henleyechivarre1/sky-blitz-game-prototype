@@ -258,14 +258,21 @@ export const SkyBlitz: React.FC = () => {
 
   const shootLaser = () => {
     const newLasers: { x: number; y: number }[] = [];
+    const bulletSpacing = 10; 
     for (let i = 0; i < bulletCount; i++) {
+      // Adjust the x position to spread the bullets evenly, centered around the player
+      const laserX =
+        player.x - ((bulletCount - 1) * bulletSpacing) / 2 + i * bulletSpacing;
+
       newLasers.push({
-        x: player.x - i * 10 + bulletCount * 5,
-        y: player.y - 20,
+        x: laserX, // Adjusted x position
+        y: player.y - 20, // Spawn slightly above the player
       });
     }
+
     setLasers((prev) => [...prev, ...newLasers]);
   };
+
 
   const createExplosion = (x: number, y: number) => {
     const newParticles: Particle[] = [];
