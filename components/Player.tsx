@@ -45,7 +45,7 @@ export class Player {
     ctx.beginPath()
     ctx.arc(x, y + 15, 10, 0, Math.PI * 2)
     ctx.fill()
-
+    //Shiled
     if (shieldHealth > 0) {
       ctx.strokeStyle = `rgba(0, 200, 255, 0.5)`; // Light blue glow effect
       ctx.lineWidth = 5;
@@ -53,7 +53,12 @@ export class Player {
       ctx.arc(x, y, 25, 0, Math.PI * 2); // Circular shield
       ctx.stroke();
     }
-
+    //Hitbox for debugging purposes
+    // ctx.strokeStyle = "white";
+    // ctx.lineWidth = 2;
+    // ctx.beginPath();
+    // ctx.arc(x, y, 20, 0, Math.PI * 2); // Match hitbox size (20px)
+    // ctx.stroke();
   }
 }
 
