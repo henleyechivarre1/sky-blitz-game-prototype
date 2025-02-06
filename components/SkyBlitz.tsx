@@ -35,6 +35,7 @@ export const SkyBlitz: React.FC = () => {
     y: CANVAS_HEIGHT - 50,
   });
   const SHOOT_INTERVAL = 100;
+  const PLAYER_HITBOX_SIZE = 15;
   const lastShotTime = useRef(0);
   const gameStartTime = useRef(performance.now()); // Track game start time
   const [enemies, setEnemies] = useState<Enemy[]>([]);
@@ -195,7 +196,7 @@ export const SkyBlitz: React.FC = () => {
     setBulletCount((prev) => prev + 2);
   };
   const onUpgradeShield = () => {
-    setShieldHealth(3); // Set shield health to full (3 hits)
+    setShieldHealth(5); // Set shield health to full (5 hits)
   };
 
   const checkPlayerHit = (enemyIndex: number) => {
@@ -326,12 +327,37 @@ export const SkyBlitz: React.FC = () => {
           const vx = (dx / distance) * enemy.speed;
           const vy = (dy / distance) * enemy.speed;
 
-          return {
+          // Updated Enemy Position
+          const updatedEnemy: Enemy = {
             ...enemy,
             x: enemy.x + vx,
             y: enemy.y + vy,
           };
+
+          if (
+            shieldHealth > 0 &&
+            Math.abs(updatedEnemy.x - player.x) < 35 &&
+            Math.abs(updatedEnemy.y - player.y) < 35
+          ) {
+            setShieldHealth((prev) => Math.max(0, prev - 1)); // Reduce shield health by 1
+            createExplosion(updatedEnemy.x, updatedEnemy.y); // Explosion effect
+            return null; // Mark for removal
+          }
+
+          // Collision with Player (Only if Shield is Gone)
+          if (
+            shieldHealth <= 0 &&
+            Math.abs(updatedEnemy.x - player.x) < 35 &&
+            Math.abs(updatedEnemy.y - player.y) < 35
+          ) {
+            setGameOver(true);
+            createExplosion(player.x, player.y);
+            return null; // Mark for removal
+          }
+
+          return updatedEnemy; // Enemy keeps moving if no collision
         })
+        .filter((enemy): enemy is Enemy => enemy !== null) // Remove null values safely
         .filter(
           (enemy) =>
             enemy.x >= 0 &&
@@ -340,6 +366,7 @@ export const SkyBlitz: React.FC = () => {
             enemy.y <= CANVAS_HEIGHT
         )
     );
+
 
     setLasers((prev) =>
       prev
@@ -434,7 +461,7 @@ export const SkyBlitz: React.FC = () => {
     // Check for game over
     const playerHit = enemies.some(
       (enemy) =>
-        Math.abs(enemy.x - player.x) < 35 && Math.abs(enemy.y - player.y) < 35
+        Math.abs(enemy.x - player.x) < PLAYER_HITBOX_SIZE  && Math.abs(enemy.y - player.y) < PLAYER_HITBOX_SIZE 
     );
     if (playerHit) {
       setGameOver(true);
