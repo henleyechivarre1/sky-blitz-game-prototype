@@ -5,11 +5,11 @@ export interface Laser {
 
 export class Laser {
   static draw(ctx: CanvasRenderingContext2D, { x, y }: Laser) {
-    // Create a sharp, glowing red laser gradient
+    // Create a sharp, glowing yellow laser gradient
     const gradient = ctx.createLinearGradient(x, y, x, y - 30);
-    gradient.addColorStop(0, "rgba(255, 0, 0, 0.8)"); // Start with intense red
-    gradient.addColorStop(0.5, "rgba(255, 0, 0, 1)"); // Full red intensity in the middle
-    gradient.addColorStop(1, "rgba(255, 100, 100, 0.6)"); // Light red fade at the end
+    gradient.addColorStop(0, "rgba(255, 255, 0, 1)"); // Bright yellow at the start
+    gradient.addColorStop(0.5, "rgba(255, 255, 100, 1)"); // Lighter yellow in the middle
+    gradient.addColorStop(1, "rgba(255, 255, 150, 0.8)"); // Fading yellow at the end
 
     // Draw the laser line with gradient effect
     ctx.strokeStyle = gradient;
@@ -19,10 +19,10 @@ export class Laser {
     ctx.lineTo(x, y - 20); // Increased length for more dramatic effect
     ctx.stroke();
 
-    // Adding a glowing red effect to enhance the laser feel
+    // Adding a glowing yellow effect to enhance the laser feel
     const glowGradient = ctx.createLinearGradient(x, y, x, y - 30);
-    glowGradient.addColorStop(0, "rgba(255, 100, 100, 0.5)"); // Red glow
-    glowGradient.addColorStop(1, "rgba(255, 100, 100, 0.1)"); // Fade at the end
+    glowGradient.addColorStop(0, "rgba(255, 255, 0, 0.7)"); // Strong yellow glow
+    glowGradient.addColorStop(1, "rgba(255, 255, 0, 0.2)"); // Subtle fade at the end
 
     ctx.strokeStyle = glowGradient;
     ctx.lineWidth = 6; // Glow effect is thicker
