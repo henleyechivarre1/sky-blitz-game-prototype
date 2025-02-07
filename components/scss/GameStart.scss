@@ -1,44 +1,63 @@
 .game-start-container {
-  width: 600px; // "Phone-like" width
-  height: 100vh; // Full height
-  display: block;
-  background-color: #1a1a2e;
-  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: url("/background.jpg") center/cover; // Add a cool space background
+  text-align: center;
 }
 
 .game-title {
-  font-size: 3rem;
+  font-size: 50px;
   font-weight: bold;
-  margin-bottom: 20px;
+  color: gold;
+  text-shadow: 0px 0px 20px rgba(255, 215, 0, 0.8);
+  animation: glow 2s infinite alternate;
 }
 
-.start-button {
-  padding: 10px 20px;
-  font-size: 1.5rem;
+@keyframes glow {
+  from {
+    text-shadow: 0px 0px 10px rgba(255, 215, 0, 0.6);
+  }
+  to {
+    text-shadow: 0px 0px 20px rgba(255, 215, 0, 1);
+  }
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.start-button,
+.store-button {
+  background: linear-gradient(45deg, #ffcc00, #ff9900);
+  color: black;
+  font-size: 22px;
   font-weight: bold;
-  color: white;
-  background-color: #007bff;
+  padding: 12px 30px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  margin-top: 10px;
   transition: 0.3s;
+  box-shadow: 0px 5px 15px rgba(255, 165, 0, 0.5);
 }
 
-.start-button:hover {
-  background-color: #0056b3;
+.start-button:hover,
+.store-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0px 5px 25px rgba(255, 165, 0, 0.8);
 }
 
-
-button.store-button {
-  padding: 10px 20px;
-  font-size: 1.5rem;
-  font-weight: bold;
+.store-button {
+  background: linear-gradient(45deg, #0077ff, #0055cc);
   color: white;
-  background-color: #007bff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: 0.3s;
-  width: 166px;
-  margin-top: 14px;
+}
+
+.store-button:hover {
+  box-shadow: 0px 5px 25px rgba(0, 119, 255, 0.8);
 }

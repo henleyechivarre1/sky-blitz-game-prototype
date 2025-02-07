@@ -25,24 +25,28 @@ export default function GameStart({
 
   return (
     <div className="game-start-container">
-      <h1 className="game-title">SkyBlitz</h1>
-      <button className="start-button" onClick={onStart}>
-        Start Game
-      </button>
-      {/* Store Button (Opens Modal Instead of Routing) */}
-      <button onClick={() => setIsStoreOpen(true)} className="store-button">
-        Store
-      </button>
+      <h1 className="game-title">🚀 SkyBlitz</h1>
+
+      <div className="button-container">
+        <button className="start-button" onClick={onStart}>
+          ▶ Start Game
+        </button>
+
+        <button onClick={() => setIsStoreOpen(true)} className="store-button">
+          🛒 Open Store
+        </button>
+      </div>
+
       {/* Store Modal */}
       {isStoreOpen && (
         <Store
           onClose={() => setIsStoreOpen(false)}
           onUpgradeBullets={onUpgradeBullets}
-          onUpgradeShield={onUpgradeShield} // Pass shield upgrade function
+          onUpgradeShield={onUpgradeShield}
           score={score}
           setScore={setScore}
-          shieldHealth={shieldHealth} // Pass current shield health
-          setShieldHealth={setShieldHealth} // Pass function to update shield health
+          shieldHealth={shieldHealth}
+          setShieldHealth={setShieldHealth}
         />
       )}
     </div>
