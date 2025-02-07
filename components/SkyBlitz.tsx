@@ -49,10 +49,13 @@ export const SkyBlitz: React.FC = () => {
   const [shieldHealth, setShieldHealth] = useState(0);
   const [upgradeBulletCount, setUpgradeBulletCount] = useState(1);
   const [score, setScore] = useState(0);
-  const [points, setPoints] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [scoreThreshold, setScoreThreshold] = useState(100);
+  const [points, setPoints] = useState(1000);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false); // Pause state
+  const enemyHitboxSize = 40;
 
   useEffect(() => {
     if (!gameStarted) return; // Only attach input when the game starts
@@ -60,21 +63,38 @@ export const SkyBlitz: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (gameOver) return;
-      const rect = canvas.getBoundingClientRect();
-      setPlayer({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
+    let isMouseDown = false; // Flag to track if the mouse button is held down
+
+    const handleMouseDown = () => {
+      isMouseDown = true; // Start moving when mouse is held down
     };
 
+    const handleMouseUp = () => {
+      isMouseDown = false; // Stop moving when mouse is released
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (gameOver || !isMouseDown) return; // Move only when mouse is held down
+
+      const rect = canvas.getBoundingClientRect();
+
+      setPlayer((prevPlayer) => ({
+        ...prevPlayer,
+        x: e.clientX - rect.left, // Update x position
+        y: prevPlayer.y, // Keep y fixed
+      }));
+    };
+
+    canvas.addEventListener("mousedown", handleMouseDown);
+    canvas.addEventListener("mouseup", handleMouseUp);
     canvas.addEventListener("mousemove", handleMouseMove);
 
     return () => {
+      canvas.removeEventListener("mousedown", handleMouseDown);
+      canvas.removeEventListener("mouseup", handleMouseUp);
       canvas.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [gameStarted, gameOver]); // Reinitialize inputs when game starts
+  }, [gameStarted, gameOver, player.y]); // Ensure y remains unchanged
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -104,6 +124,14 @@ export const SkyBlitz: React.FC = () => {
       window.removeEventListener("keydown", handleKeyDown); // Clean up listener on component unmount
     };
   }, []);
+
+  useEffect(() => {
+    if (score >= scoreThreshold) {
+      setLevel((prevLevel) => prevLevel + 1);
+      setScore(0); // Reset score for the next level
+      setScoreThreshold((prevThreshold) => prevThreshold + 100);
+    }
+  }, [score]);
 
   // useEffect(() => {
   //   const interval = setInterval(() => {
@@ -155,30 +183,42 @@ export const SkyBlitz: React.FC = () => {
   //   };
   // }, [gameOver]);
 
-  const spawnEnemy = (enemyType: number) => {
-    let baseHealth = 1;
-    if (!gameStarted) return;
+  const getEnemyHealth = (level: number, enemyType: number) => {
+    // Base health per enemy type at Level 1
+    const baseHealth =
+      enemyType === 1
+        ? 3 // Type 1 starts with 2 HP
+        : enemyType === 2
+        ? 5 // Type 2 starts with 3 HP
+        : enemyType === 3
+        ? 2 // Type 3 starts with 1 HP
+        : 10; // Type 4 starts with 8 HP (Tankiest enemy)
 
-    // Increase enemy health based on score milestones
-    if (score >= 100) {
-      baseHealth =
-        enemyType === 1 ? 1 : enemyType === 2 ? 3 : enemyType === 3 ? 2 : 4;
-    } else if (score >= 300) {
-      baseHealth =
-        enemyType === 1 ? 2 : enemyType === 2 ? 3 : enemyType === 3 ? 4 : 6;
-    } else if (score >= 500) {
-      baseHealth =
-        enemyType === 1 ? 3 : enemyType === 2 ? 5 : enemyType === 3 ? 6 : 7;
-    } else {
-      baseHealth =
-        enemyType === 1 ? 1 : enemyType === 2 ? 2 : enemyType === 3 ? 2 : 3; // Default health
-    }
+    // Level scaling factor (increases every 10 levels)
+    const levelFactor = Math.floor(level / 10);
+
+    // Enemy type multiplier (controls how much health increases per 10 levels)
+    const typeMultiplier =
+      enemyType === 1
+        ? 2 // Type 1 increases moderately
+        : enemyType === 2
+        ? 3 // Type 2 increases faster
+        : enemyType === 3
+        ? 1 // Type 3 increases slowly
+        : 4; // Type 4 scales the hardest
+
+    // Final health calculation
+    return baseHealth + levelFactor * typeMultiplier;
+  };
+
+  const spawnEnemy = (enemyType: number) => {
+    if (!gameStarted) return;
 
     const newEnemy: Enemy = {
       x: Math.random() * canvasSize.width,
       y: 0,
       type: enemyType,
-      health: baseHealth,
+      health: getEnemyHealth(level, enemyType),
       speed: enemyType === 3 ? 2 : enemyType === 1 ? 1 : 0.5,
     };
 
@@ -213,15 +253,28 @@ export const SkyBlitz: React.FC = () => {
     setShieldHealth(5); // Set shield health to full (5 hits)
   };
 
-  const checkPlayerHit = (enemyIndex: number) => {
-    if (shieldHealth > 0) {
-      setShieldHealth((prev) => prev - 1); // Reduce shield health by 1
+  const checkPlayerHit = (enemy: Enemy, enemyIndex: number) => {
+    const hitboxSize = 35; // Adjusted for more accurate hit detection
+    const isColliding =
+      Math.abs(enemy.x - player.x) < hitboxSize &&
+      Math.abs(enemy.y - player.y) < hitboxSize;
 
-      if (shieldHealth - 1 <= 0) {
-        setShieldHealth(0); // Shield disappears when hit 3 times
+    if (isColliding) {
+      if (shieldHealth > 0) {
+        setShieldHealth((prev) => prev - 1); // Reduce shield by 1
+        createExplosion(enemy.x, enemy.y); // Explosion effect when shield absorbs hit
+
+        // If shield is fully depleted, remove it
+        if (shieldHealth - 1 <= 0) {
+          setShieldHealth(0);
+        }
+      } else {
+        // No shield? Game over!
+        setGameOver(true);
+        createExplosion(player.x, player.y);
       }
-    } else {
-      // If shield is already gone, destroy the enemy
+
+      // Remove the enemy after collision
       setEnemies((prevEnemies) =>
         prevEnemies.filter((_, i) => i !== enemyIndex)
       );
@@ -245,7 +298,7 @@ export const SkyBlitz: React.FC = () => {
   };
 
   const activatePowerUp = () => {
-    setBulletCount(6); // Increase bullets
+    setBulletCount(5); // Increase bullets
     // If a timer already exists, clear it first (reset instead of adding)
     if (powerUpTimer.current) {
       clearTimeout(powerUpTimer.current);
@@ -258,7 +311,7 @@ export const SkyBlitz: React.FC = () => {
 
   const shootLaser = () => {
     const newLasers: { x: number; y: number }[] = [];
-    const bulletSpacing = 10; 
+    const bulletSpacing = 10;
     for (let i = 0; i < bulletCount; i++) {
       // Adjust the x position to spread the bullets evenly, centered around the player
       const laserX =
@@ -272,7 +325,6 @@ export const SkyBlitz: React.FC = () => {
 
     setLasers((prev) => [...prev, ...newLasers]);
   };
-
 
   const createExplosion = (x: number, y: number) => {
     const newParticles: Particle[] = [];
@@ -309,11 +361,11 @@ export const SkyBlitz: React.FC = () => {
     const currentTime = performance.now();
     const elapsedTime = currentTime - gameStartTime.current; // Time since game started
 
-    if (score >= 100 && !unlockedTypes.includes(2))
+    if (level >= 2 && !unlockedTypes.includes(2))
       setUnlockedTypes((prev) => [...prev, 2]); // Unlock Type 2
-    if (score >= 200 && !unlockedTypes.includes(3))
+    if (level >= 3 && !unlockedTypes.includes(3))
       setUnlockedTypes((prev) => [...prev, 3]); // Unlock Type 3
-    if (score >= 300 && !unlockedTypes.includes(4))
+    if (level >= 4 && !unlockedTypes.includes(4))
       setUnlockedTypes((prev) => [...prev, 4]); // Unlock Type 4
 
     // === Spawn Enemy Based on Unlocked Types ===
@@ -341,44 +393,34 @@ export const SkyBlitz: React.FC = () => {
 
     setEnemies((prev) =>
       prev
-        .map((enemy) => {
+        .map((enemy, index) => {
           const dx = player.x - enemy.x;
           const dy = player.y - enemy.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          const vx = (dx / distance) * enemy.speed;
-          const vy = (dy / distance) * enemy.speed;
+          let vx = (dx / distance) * enemy.speed;
+          let vy = (dy / distance) * enemy.speed;
 
-          // Updated Enemy Position
-          const updatedEnemy: Enemy = {
+          // Apply movement patterns based on enemy type
+          if (enemy.type === 2) {
+            // **Type 2: Zigzag Pattern (Shorter Movements)**
+            vx += Math.sin(enemy.y / 15) * 2; // Reduced width (from 3 to 2) and frequency adjusted
+          } else if (enemy.type === 3 && Math.random() < 0.3) {
+            vx += (Math.random() - 0.5) * 5; // Adjusted randomness
+          } else if (enemy.type === 4 && Math.random() < 0.1) {
+            vx = (dx / distance) * enemy.speed * 2;
+          }
+
+          const updatedEnemy = {
             ...enemy,
             x: enemy.x + vx,
             y: enemy.y + vy,
           };
 
-          if (
-            shieldHealth > 0 &&
-            Math.abs(updatedEnemy.x - player.x) < 35 &&
-            Math.abs(updatedEnemy.y - player.y) < 35
-          ) {
-            setShieldHealth((prev) => Math.max(0, prev - 1)); // Reduce shield health by 1
-            createExplosion(updatedEnemy.x, updatedEnemy.y); // Explosion effect
-            return null; // Mark for removal
-          }
+          // **Check for collision with player**
+          checkPlayerHit(updatedEnemy, index);
 
-          // Collision with Player (Only if Shield is Gone)
-          if (
-            shieldHealth <= 0 &&
-            Math.abs(updatedEnemy.x - player.x) < 35 &&
-            Math.abs(updatedEnemy.y - player.y) < 35
-          ) {
-            setGameOver(true);
-            createExplosion(player.x, player.y);
-            return null; // Mark for removal
-          }
-
-          return updatedEnemy; // Enemy keeps moving if no collision
+          return updatedEnemy;
         })
-        .filter((enemy): enemy is Enemy => enemy !== null) // Remove null values safely
         .filter(
           (enemy) =>
             enemy.x >= 0 &&
@@ -387,7 +429,6 @@ export const SkyBlitz: React.FC = () => {
             enemy.y <= canvasSize.height
         )
     );
-
 
     setLasers((prev) =>
       prev
@@ -480,14 +521,17 @@ export const SkyBlitz: React.FC = () => {
     });
 
     // Check for game over
-    const playerHit = enemies.some(
-      (enemy) =>
-        Math.abs(enemy.x - player.x) < PLAYER_HITBOX_SIZE  && Math.abs(enemy.y - player.y) < PLAYER_HITBOX_SIZE 
-    );
-    if (playerHit) {
-      setGameOver(true);
-      createExplosion(player.x, player.y);
-    }
+   const playerHit = enemies.some(
+     (enemy) =>
+       Math.abs(enemy.x - player.x) < PLAYER_HITBOX_SIZE &&
+       Math.abs(enemy.y - player.y) < PLAYER_HITBOX_SIZE
+   );
+
+   if (playerHit) {
+     setGameOver(true);
+     createExplosion(player.x, player.y);
+   }
+
 
     // Update score
     setScore(
@@ -517,9 +561,14 @@ export const SkyBlitz: React.FC = () => {
         ctx.fill();
       });
 
+      // Points Text with Sci-Fi Glow
       ctx.fillStyle = "white";
-      ctx.font = "20px Arial";
-      ctx.fillText(`Points: ${score}`, 10, 30);
+      ctx.font = "bold 22px 'Orbitron', Arial"; // Sci-fi font for a game-like feel
+      ctx.textAlign = "left";
+      ctx.shadowColor = "cyan"; // Neon glow effect
+      ctx.shadowBlur = 10;
+      ctx.fillText(`⚡ Points: ${score}`, 20, 40); // Positioned at the top-left
+      ctx.shadowBlur = 0; // Reset shadow effect
 
       powerUps.forEach((powerUp) => {
         ctx.fillStyle = "yellow";
@@ -532,13 +581,68 @@ export const SkyBlitz: React.FC = () => {
         ctx.fillText("P", powerUp.x - 4, powerUp.y + 4);
       });
 
+      ctx.fillStyle = "white";
+      const centerX = canvasSize.width - 60; // 60px from the right
+      const centerY = 60; // 60px from the top
+      const radius = 40;
+      // Calculate progress percentage
+      const progressPercentage = Math.min(score / scoreThreshold, 1); // Cap at 100%
+      const progressAngle = progressPercentage * 2 * Math.PI;
+      // Background Circle
+      ctx.strokeStyle = "#444";
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      // Progress Arc
+      // Progress Circle (Neon Effect)
+      ctx.strokeStyle = "rgba(255, 215, 0, 0.9)"; // Bright gold with transparency
+      ctx.lineWidth = 12;
+      ctx.lineCap = "round"; // Makes progress bar edges smooth
+      ctx.beginPath();
+      ctx.arc(
+        centerX,
+        centerY,
+        radius,
+        -Math.PI / 2,
+        -Math.PI / 2 + progressAngle
+      );
+      ctx.stroke();
+
+      // Outer Glow for Extra Effect
+      ctx.strokeStyle = "rgba(255, 215, 0, 0.3)";
+      ctx.lineWidth = 16;
+      ctx.beginPath();
+      ctx.arc(
+        centerX,
+        centerY,
+        radius,
+        -Math.PI / 2,
+        -Math.PI / 2 + progressAngle
+      );
+      ctx.stroke();
+
+      // Level Text with Futuristic Font
+      ctx.fillStyle = "white";
+      ctx.font = "bold 22px 'Orbitron', Arial"; // Use Orbitron for a sci-fi look
+      ctx.textAlign = "center";
+      ctx.shadowColor = "gold"; // Glow effect
+      ctx.shadowBlur = 15;
+      ctx.fillText(`Lv ${level}`, centerX, centerY + 5);
+      ctx.shadowBlur = 0; // Reset shadow
+
       if (gameOver) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
         ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
         ctx.fillStyle = "white";
         ctx.font = "48px Arial";
         ctx.textAlign = "center";
-        ctx.fillText("GAME OVER", canvasSize.width / 2, canvasSize.height / 2 - 50);
+        ctx.fillText(
+          "GAME OVER",
+          canvasSize.width / 2,
+          canvasSize.height / 2 - 50
+        );
         ctx.font = "24px Arial";
         ctx.fillText(
           `Final Score: ${score}`,
@@ -579,39 +683,38 @@ export const SkyBlitz: React.FC = () => {
             </div>
 
             {gameOver && (
-              <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center bg-black/80">
-                <h2 className="text-white text-3xl font-bold mb-4">
-                  Game Over
-                </h2>
+              <div className="game-over-screen">
+                <h2 className="game-over-title">☠ GAME OVER ☠</h2>
 
-                <Button
-                  onClick={resetGame}
-                  className="px-6 py-3 text-lg bg-blue-500 hover:bg-blue-600 text-white font-bold rounded mb-2"
-                >
-                  Restart Game
-                </Button>
+                <p className="game-over-score">Final Score: {score}</p>
 
-                <Button
-                  onClick={() => {
-                    backButton();
-                  }}
-                  className="px-6 py-3 text-lg bg-gray-500 hover:bg-gray-600 text-white font-bold rounded"
-                >
-                  Back to Home
-                </Button>
+                <div className="game-over-buttons">
+                  <button className="game-over-btn restart" onClick={resetGame}>
+                    🔄 Restart Game
+                  </button>
+                  <button className="game-over-btn home" onClick={backButton}>
+                    🏠 Back to Home
+                  </button>
+                </div>
               </div>
             )}
             {isPaused && (
               <div className="pause-menu">
-                <h2 className="game-pause-h2">Game Paused</h2>
-                <button className="game-resume" onClick={() => setIsPaused(false)}>Resume</button>
-                <button className="game-back"
-                  onClick={() => {
-                    backButton();
-                  }}
-                >
-                  Quit
-                </button>
+                <div className="pause-content">
+                  <h2 className="pause-title">⏸ Game Paused</h2>
+
+                  <div className="pause-buttons">
+                    <button
+                      className="pause-btn resume"
+                      onClick={() => setIsPaused(false)}
+                    >
+                      ▶ Resume
+                    </button>
+                    <button className="pause-btn quit" onClick={backButton}>
+                      ⏹ Quit to Menu
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

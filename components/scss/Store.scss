@@ -1,76 +1,94 @@
 .store-modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  z-index: 1000;
 }
 
 .store-content {
-  background: #1a1a2e;
+  background: #222;
+  color: white;
   padding: 20px;
   border-radius: 10px;
   text-align: center;
   width: 350px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0px 0px 15px rgba(255, 215, 0, 0.5);
+}
+
+.store-title {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: gold;
+}
+
+.store-points {
+  font-size: 18px;
+  margin-bottom: 15px;
+  font-weight: bold;
 }
 
 .store-items {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  margin-top: 20px;
 }
 
 .store-item {
-  background: black;
+  background: #333;
   padding: 15px;
   border-radius: 8px;
+  box-shadow: 0px 0px 5px rgba(255, 255, 255, 0.2);
+}
+
+.store-item-title {
+  font-size: 18px;
+  color: lightblue;
+  margin-bottom: 5px;
+}
+
+.store-item-desc {
+  font-size: 14px;
+  color: #bbb;
+  margin-bottom: 10px;
 }
 
 .buy-button {
-  background: green;
-  color: white;
-  padding: 8px 12px;
-  border: none;
+  background: gold;
+  color: black;
+  padding: 8px 15px;
   border-radius: 5px;
+  font-weight: bold;
   cursor: pointer;
-  margin-top: 10px;
+  border: none;
+  transition: 0.2s;
 }
 
 .buy-button:hover {
-  background: darkgreen;
-}
-
-.close-button {
-  margin-top: 20px;
-  padding: 10px;
-  background: red;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.buy-button {
-  background: green;
-  color: white;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: 10px;
+  background: #ffcc00;
 }
 
 .buy-button.disabled {
-  background: gray;
+  background: grey;
   cursor: not-allowed;
 }
 
-.buy-button:hover:not(.disabled) {
-  background: darkgreen;
+.close-button {
+  margin-top: 15px;
+  background: red;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+.close-button:hover {
+  background: darkred;
 }
